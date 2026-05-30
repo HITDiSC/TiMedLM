@@ -65,8 +65,8 @@ def normalize_text(text: str) -> str:
 
 def clean_book_name(filename: str) -> str:
     name = Path(filename).stem
-    name = re.sub(r"^\[?OCR\]?", "", name)
-    name = name.strip("_-[]锛堬級() ")
+    name = re.sub(r"^(?:\[?OCR\]?|OCR_?)", "", name)
+    name = name.strip("_-[]() ")
     return name or Path(filename).stem
 
 

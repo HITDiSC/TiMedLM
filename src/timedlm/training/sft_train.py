@@ -1,31 +1,18 @@
+# -*- coding: utf-8 -*-
 # This file trains TiMedLM with supervised fine-tuning.
 # Author: TiMedLM contributors
 # Date: 2026-05-30
 # Copyright (c) 2026 TiMedLM contributors. All rights reserved.
 # See LICENSE file in the project root for license information.
-# -*- coding: utf-8 -*-
 """
-Qwen3-8B LoRA SFT寰皟
-鍩哄骇妯″瀷锛?data/zcy/models/Qwen3-8B
-璁粌鏁版嵁锛?data/zcy/data/final_train_v3.json
-
-鏀瑰姩锛堢浉瀵箆2锛夛細
-- 鏁版嵁鏀圭敤鏂版瀯寤虹殑 final_train_clean.json锛?000鏉★紝15绉嶆牸寮忓潎琛★級
-- epoch 浠?澧炲姞鍒?锛堟暟鎹噺浠?2000鏉″噺灏戝埌6000鏉★級
-- 杈撳嚭鐩綍鏀逛负 lora-v3
-
-鍗曞崱杩愯锛?    CUDA_VISIBLE_DEVICES=3 python sft_train_v5.py
-
-涓夊崱杩愯锛?    CUDA_VISIBLE_DEVICES=1,2,3 torchrun --nproc_per_node=3 sft_train_v5.py
+LoRA supervised fine-tuning script for TiMedLM.
 """
 
-import os
-import json
 import argparse
+import json
+import os
+
 import torch
-
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-
 from datasets import Dataset
 from peft import LoraConfig, TaskType, get_peft_model
 from transformers import (
@@ -36,33 +23,26 @@ from transformers import (
     TrainingArguments,
 )
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 璺緞閰嶇疆
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 DEFAULT_MODEL_PATH = "Qwen/Qwen3-8B"
 DEFAULT_DATA_PATH = "data/final_train_v5.json"
 DEFAULT_OUTPUT_DIR = "outputs/qwen3-8b-timedlm-sft-v5"
 DEFAULT_LOGGING_DIR = "outputs/logs-sft-v5"
-
-
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# LoRA閰嶇疆
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+MAX_LENGTH = 4096
 
 LORA_CONFIG = LoraConfig(
     task_type=TaskType.CAUSAL_LM,
     r=16,
     lora_alpha=32,
     lora_dropout=0.05,
-    target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                    "gate_proj", "up_proj", "down_proj"],
+    target_modules=[
+        "q_proj", "k_proj", "v_proj", "o_proj",
+        "gate_proj", "up_proj", "down_proj",
+    ],
     bias="none",
 )
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 璁粌鍙傛暟
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def parse_args():
     parser = argparse.ArgumentParser(description="LoRA SFT for TiMedLM-8B.")
@@ -107,11 +87,6 @@ def build_training_args(args):
         greater_is_better=False,
         seed=args.seed,
     )
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 鏁版嵁澶勭悊
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-
-MAX_LENGTH = 4096
 
 
 def load_data(path: str):
@@ -128,8 +103,8 @@ def messages_to_text(messages: list, tokenizer) -> str:
 
 
 def preprocess(examples, tokenizer):
-    input_ids_list  = []
-    labels_list     = []
+    input_ids_list = []
+    labels_list = []
     attention_masks = []
 
     for messages in examples["messages"]:
@@ -142,16 +117,13 @@ def preprocess(examples, tokenizer):
             return_tensors=None,
         )
         input_ids = tokenized["input_ids"]
-
-        # Loss Mask锛氬彧瀵筧ssistant娑堟伅璁＄畻loss
-        # tool娑堟伅锛堟绱㈢粨鏋滐級= observation锛屼笉璁＄畻loss
-        # system/user/tool 鍏ㄩ儴mask鎺?        labels      = [-100] * len(input_ids)
+        labels = [-100] * len(input_ids)
         current_len = 0
 
         for i, msg in enumerate(messages):
-            partial_messages = messages[:i+1]
-            partial_text     = messages_to_text(partial_messages, tokenizer)
-            partial_ids      = tokenizer(
+            partial_messages = messages[: i + 1]
+            partial_text = messages_to_text(partial_messages, tokenizer)
+            partial_ids = tokenizer(
                 partial_text,
                 truncation=True,
                 max_length=MAX_LENGTH,
@@ -161,10 +133,8 @@ def preprocess(examples, tokenizer):
             new_len = len(partial_ids)
 
             if msg["role"] == "assistant":
-                # 鍙湁assistant娑堟伅璁＄畻loss
                 for j in range(current_len, min(new_len, len(labels))):
                     labels[j] = input_ids[j]
-            # tool/system/user 淇濇寔-100锛屼笉璁＄畻loss
 
             current_len = new_len
 
@@ -173,37 +143,34 @@ def preprocess(examples, tokenizer):
         attention_masks.append([1] * len(input_ids))
 
     return {
-        "input_ids":      input_ids_list,
-        "labels":         labels_list,
+        "input_ids": input_ids_list,
+        "labels": labels_list,
         "attention_mask": attention_masks,
     }
 
 
 def verify_mask(tokenized_dataset, num_samples=5):
-    """楠岃瘉Loss Mask鏄惁姝ｅ父锛屾墦鍗版湁鏁坱oken姣斾緥"""
-    print("\n楠岃瘉Loss Mask锛堟湁鏁坱oken姣斾緥搴斿湪15%-40%涔嬮棿锛夛細")
+    """Print the proportion of tokens that contribute to the loss."""
+    print("\nVerifying loss mask; effective token ratio should usually be moderate.")
     ratios = []
     for i in range(min(num_samples, len(tokenized_dataset))):
-        sample    = tokenized_dataset[i]
-        labels    = sample["labels"]
-        total     = len(labels)
-        non_mask  = sum(1 for l in labels if l != -100)
-        ratio     = non_mask / total if total > 0 else 0
+        sample = tokenized_dataset[i]
+        labels = sample["labels"]
+        total = len(labels)
+        non_mask = sum(1 for label in labels if label != -100)
+        ratio = non_mask / total if total > 0 else 0
         ratios.append(ratio)
-        print(f"  鏍锋湰{i+1}: {non_mask}/{total} = {ratio:.2%}")
+        print(f"  sample {i + 1}: {non_mask}/{total} = {ratio:.2%}")
 
     avg = sum(ratios) / len(ratios)
-    print(f"  骞冲潎鏈夋晥token姣斾緥: {avg:.2%}")
+    print(f"  average effective token ratio: {avg:.2%}")
     if avg < 0.05:
-        print("  鈿狅笍  璀﹀憡锛氭湁鏁坱oken姣斾緥杩囦綆锛岃妫€鏌ssistant娑堟伅鏄惁姝ｇ‘璇嗗埆")
+        print("  Warning: effective token ratio is low; check assistant message masking.")
     elif avg > 0.6:
         print("  Warning: effective token ratio is high; tool messages may not be masked.")
     else:
-        print("  鉁?Loss Mask姝ｅ父")
+        print("  Loss mask looks normal.")
 
-
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 涓绘祦绋?# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def main():
     args = parse_args()
@@ -211,7 +178,7 @@ def main():
     os.makedirs(args.logging_dir, exist_ok=True)
     training_args = build_training_args(args)
 
-    print("鍔犺浇tokenizer...")
+    print("Loading tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_path,
         trust_remote_code=True,
@@ -220,27 +187,27 @@ def main():
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    print("鍔犺浇妯″瀷...")
+    print("Loading model...")
     model = AutoModelForCausalLM.from_pretrained(
         args.model_path,
         trust_remote_code=True,
         torch_dtype=torch.bfloat16,
     )
 
-    print("搴旂敤LoRA...")
+    print("Applying LoRA...")
     model = get_peft_model(model, LORA_CONFIG)
     model.print_trainable_parameters()
 
     model.enable_input_require_grads()
     model.gradient_checkpointing_enable()
 
-    print("鍔犺浇鏁版嵁...")
+    print("Loading data...")
     raw_data = load_data(args.data_path)
     print(f"  Total samples: {len(raw_data)}")
 
     dataset = Dataset.from_list(raw_data)
 
-    print("棰勫鐞嗘暟鎹?..")
+    print("Preprocessing data...")
     tokenized_dataset = dataset.map(
         lambda x: preprocess(x, tokenizer),
         batched=True,
@@ -254,12 +221,11 @@ def main():
     )
     print(f"  Valid samples: {len(tokenized_dataset)}")
 
-    # 楠岃瘉Loss Mask
     verify_mask(tokenized_dataset)
 
     split = tokenized_dataset.train_test_split(test_size=0.05, seed=args.seed)
     train_dataset = split["train"]
-    eval_dataset  = split["test"]
+    eval_dataset = split["test"]
     print(f"\n  Train samples: {len(train_dataset)}")
     print(f"  Eval samples: {len(eval_dataset)}")
 
@@ -271,7 +237,7 @@ def main():
         label_pad_token_id=-100,
     )
 
-    print("\n寮€濮嬭缁?..")
+    print("\nStarting training...")
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -283,7 +249,7 @@ def main():
 
     trainer.train()
 
-    print("淇濆瓨妯″瀷...")
+    print("Saving model...")
     model.save_pretrained(args.output_dir)
     tokenizer.save_pretrained(args.output_dir)
     print(f"Model saved to: {args.output_dir}")
@@ -291,4 +257,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

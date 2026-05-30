@@ -5,34 +5,7 @@
 # See LICENSE file in the project root for license information.
 # -*- coding: utf-8 -*-
 """
-褰撳墠妯″瀷闂瓟棰樻祴璇曡剼鏈細Qwen3-8B + LoRA + 澶氳疆RAG + 鑷姩鎸囨爣 + 鏂偣淇濆瓨
-
-闂瓟浼樺寲鐗?v3.5 绋冲畾鐗堬細
-1. gold_evidence_ids 浼樺厛浠?reference 涓娊鍙?card_id
-2. 鑷姩鎸囨爣璁＄畻鍓嶆竻娲?card_id
-3. Evidence Support Rate 鏀逛负 Citation Validity锛屼笉澶稿ぇ涓哄够瑙夌巼
-4. 闂瓟棰?top-k 浠?6 鎻愰珮鍒?10锛屾彁楂樺璇佹嵁瑕嗙洊
-5. query prompt 寮哄寲锛氭寜瀛愰棶棰樻媶鍒嗘绱?
-6. 妯℃澘 query 浣跨敤鈥滈骞叉牳蹇冨疄浣?+ 瀛愰棶棰樻ā鏉库€?
-7. 淇鍧忓疄浣撴娊鍙栵細
-   - 杩囨护鈥滅粨鍚堣棌鍖荤悊璁哄垎鏋愬叾鑽€т笌鐥呪€?
-   - 杩囨护鈥滃姞閲嶇殑鐥団€?
-   - 杩囨护鈥滃湪钘忓尰瀛︿腑鈥?
-   - 杩囨护鈥滆缁撳悎璧ゅ反鐥呪€?
-   - 杩囨护鈥滈ギ椋熲€濃€滃娌烩€濃€滄斁琛€鈥濃€滅伀鐏糕€濃€滆壘鐏糕€濈瓑娌荤枟鏂瑰紡浼疄浣?
-8. 濡傛灉棰樺共宸叉湁鐤剧梾鍚?鑽墿鍚?鏂瑰墏鍚嶏紝鍒欎紭鍏堝彧鐢ㄨ繖浜涘疄浣擄紝涓嶅啀鐢ㄧ棁鐘舵垨娌荤枟鏂瑰紡鎵╁睍 query
-9. 鍘绘帀 v4 涓繃寮虹殑鍙嶈瘉 query 鍜屽弽璇?rerank bonus锛岄伩鍏嶆硾鍖栧櫔澹?
-10. final prompt 寮哄埗鍙兘寮曠敤妫€绱㈢粨鏋滀腑鐪熷疄鍑虹幇杩囩殑 card_id
-11. 鏂板 Hit@10 / Recall@10
-12. 鏂板 Hit@All / Recall@All锛岀敤浜庡尯鍒嗏€滃畬鍏ㄦ病妫€鍒扳€濆拰鈥滄鍒颁簡浣嗘病杩?top10鈥?
-13. 鏂板 Gold Citation Recall
-14. 鏀寔鏂偣淇濆瓨涓庢仮澶?
-
-鏈増鏂板淇锛?
-15. BERTScore 浣跨敤鏈湴 TIMEDLM_BERTSCORE_MODEL_TYPE
-16. BERTScore 鏄惧紡鎸囧畾 num_layers=12锛岄伩鍏?KeyError
-17. BERTScore 鍓嶅 prediction/reference 鎸?tokenizer 鎴柇鍒?510 tokens锛岄伩鍏嶈秴杩?512 鎶ラ敊
-18. summary 鍜?config 涓褰?BERTScore 妯″瀷銆佸眰鏁般€佹埅鏂暱搴﹀拰鎴柇鏁伴噺
+Open-ended QA evaluation for TiMedLM with multi-round RAG, automatic metrics, and checkpointing.
 """
 
 import os
@@ -51,12 +24,8 @@ from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 璺緞閰嶇疆鍖猴細鍙渶瑕佹敼杩欓噷
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 MODEL_PATH = os.environ.get("TIMEDLM_MODEL_PATH", "models/timedlm-sft-v5")
 LORA_PATH = os.environ.get("TIMEDLM_LORA_PATH", "models/timedlm-lora")
-# 闂瓟娴嬭瘯闆嗚矾寰?
 QA_TEST_PATH = os.environ.get("TIMEDLM_QA_TEST_PATH", "data/samples/oqa_eval_sample.json")
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -65,20 +34,14 @@ RESULT_DIR = os.environ.get("TIMEDLM_QA_RESULT_DIR", "results/qa/timedlm_multi_r
 RESULT_PATH = f"{RESULT_DIR}/qa_eval__qaandmcq_grpo_targeted290_rag_v5_{timestamp}.json"
 CKPT_PATH = f"{RESULT_DIR}/qa_eval__qaandmcq_grpo_targeted280_rag_v5_ckpt.json"
 
-# 鍙€夛細瀹屾暣鐭ヨ瘑搴?card 鏂囦欢锛岀敤浜庢鏌?citation existence
-# 濡傛灉娌℃湁锛屼繚鎸?None锛岃剼鏈細鐢ㄦ湰娆℃绱㈠埌鐨?card_id 浣滀负 fallback
 KNOWLEDGE_CARDS_PATH = None
 # KNOWLEDGE_CARDS_PATH = "data/knowledge_cards.jsonl"
 # KNOWLEDGE_CARDS_PATH = "data/knowledge_cards.json"
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 杩愯鍙傛暟
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 MAX_ROUNDS = 3
 
-# 闂瓟棰橀渶瑕佸璇佹嵁锛宼op-k 寤鸿姣旈€夋嫨棰樺ぇ
 RETRIEVE_TOP_K_PER_QUERY = 5
 MAX_CARDS_PER_ROUND = 10
 
@@ -90,29 +53,20 @@ MAX_NEW_TOKENS_ANSWER = 1400
 SAVE_EVERY = 10
 DEBUG_SAMPLES = 3
 
-# 闂瓟 judge 闃堝€?
 QA_HIGH_SCORE = 0.88
 QA_VERY_HIGH_SCORE = 0.94
 
-# 鏄惁璁＄畻 BERTScore
 USE_BERTSCORE = True
 
-# BERTScore 鏈湴妯″瀷閰嶇疆
-# 娉ㄦ剰锛氭湰鍦版ā鍨嬭矾寰勫繀椤婚厤鍚?num_layers 浣跨敤锛屽惁鍒?bert_score 浼?KeyError
 BERTSCORE_MODEL_TYPE = os.environ.get("TIMEDLM_BERTSCORE_MODEL_TYPE", "hfl/chinese-roberta-wwm-ext")
 
-# chinese-roberta-wwm-ext 鏄?base 缁撴瀯锛屼竴鑸负 12 灞?
 BERTSCORE_NUM_LAYERS = 12
 
-# BERT/RoBERTa 鏈€澶?512 token锛岄鐣?special tokens
 MAX_BERT_TOKENS = 510
 
 os.makedirs(RESULT_DIR, exist_ok=True)
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 妫€绱㈡ā鍧?
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 RETRIEVAL_ROOT = os.environ.get(
     "RETRIEVAL_ROOT",
@@ -122,62 +76,42 @@ sys.path.append(RETRIEVAL_ROOT)
 from retrieval import retrieve_with_scores
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# card_id 姝ｅ垯
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 CARD_ID_RE = re.compile(
     r"\b(?:fact_[a-zA-Z0-9]+_\d{3}_\d{3}|case_[a-zA-Z0-9]+_\d{3}_\d{3}|diag_manual_\d{3})\b"
 )
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 # System Prompt
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 SYSTEM_PROMPT = """\
-浣犳槸涓€涓潰鍚戣棌鍖荤煡璇嗛棶绛旂殑AI鍔╂墜锛岃兘澶熷洖绛斿叧浜庤棌鍖荤悊璁恒€佽瘖鏂€佽嵂鐗┿€佹不鐤楃瓑鏂归潰鐨勯棶棰樸€備綘蹇呴』涓ユ牸閬靛惊浠ヤ笅瑙勫垯銆?
+You are a Tibetan medicine question-answering assistant. Answer questions using retrieved evidence.
 
-銆愭绱㈣鍒欍€?
-鍥炵瓟鍓嶅繀椤诲厛妫€绱㈣棌鍖荤煡璇嗗簱銆?
-涓嶈鍦ㄦ病鏈夋绱㈣瘉鎹殑鎯呭喌涓嬬洿鎺ョ粰鍑烘渶缁堝洖绛斻€?
+Retrieval rules:
+- Retrieve evidence before giving the final answer.
+- Do not answer from memory when retrieved evidence is required.
 
-銆愯瘖鏂帹鐞嗚鍒欍€?
-褰撻棶棰樻秹鍙婄柧鐥呰瘖鏂椂锛屽繀椤讳弗鏍兼寜浠ヤ笅椤哄簭鎺ㄧ悊锛?
-绗竴姝ワ細涓夎瘖鍒濇鍒ゆ柇锛堟湜璇?鑴夎瘖/闂瘖锛夛紝鑳界‘璇婂垯杩涘叆缁撹锛?
-绗簩姝ワ細鑻ヤ笁璇婁笉鑳界‘璇婏紝鍚敤鍗佹柟闈㈢簿鍑嗚瘖鏂紱
-绗笁姝ワ細鑻ュ崄鏂归潰浠嶄笉鑳界‘璇婏紝鍚敤浜旀閴村埆娉曪紱
-绗洓姝ワ細缁撳悎鍥涚鐤剧梾鎬ц川杈撳嚭鏈€缁堢粨璁恒€?
+Reasoning rules:
+- For diagnosis questions, consider symptoms, pulse signs, urine signs, disease nature, and differential diagnosis.
+- For medicine questions, consider properties, effects, indications, and contraindications.
+- For treatment questions, consider diet therapy, medicines, external treatment, and precautions.
+- Generate focused retrieval queries for each sub-question or aspect.
+- Avoid overly broad retrieval queries.
 
-銆愭绱㈡祦绋嬨€?
-绗竴姝ワ細杈撳嚭 <plan>...</plan>锛岃鏄庨渶瑕佹绱粈涔堢煡璇嗐€?
-绗簩姝ワ細杈撳嚭 <query>...</query>锛屽涓绱㈣瘝鐢ㄥ垎鍙峰垎闅斻€?
-绗笁姝ワ細鏀跺埌妫€绱㈢粨鏋滃悗锛岃緭鍑?<judge>...</judge> 鍒ゆ柇璇佹嵁鏄惁鍏呭垎銆?
-绗洓姝ワ細璇佹嵁鍏呭垎鍚庯紝鍩轰簬妫€绱㈢粨鏋滃洖绛旈棶棰樸€?
+Output workflow:
+1. Use <plan>...</plan> to state what evidence is needed.
+2. Use <query>...</query> for semicolon-separated retrieval queries.
+3. Use <judge>...</judge> to decide whether the evidence is sufficient.
+4. Provide the final answer based on retrieved evidence.
 
-銆恞uery鐢熸垚瑕佹眰銆?
-濡傛灉闂鍖呭惈澶氫釜鏂归潰锛屽繀椤讳负姣忎釜鏂归潰鍒嗗埆鐢熸垚妫€绱㈣瘝锛屼笉瑕佸彧鐢熸垚涓€涓缁焣uery銆?
-query 搴斾紭鍏堝寘鍚骞蹭腑鐨勬牳蹇冪柧鐥呭悕銆佽嵂鐗╁悕銆佹柟鍓傚悕鎴栫梾鐥囧悕銆?
-涓嶈鐢熸垚鈥滆棌鍖绘不鐤楁柟娉曗€濃€滆棌鍖昏瘖鏂柟娉曗€濊繖绫昏繃娉?query銆?
-璇婃柇棰樿嚦灏戣鐩栵細鐥囩姸銆佽剦璞°€佸翱璞°€佺柧鐥呮€ц川銆侀壌鍒瘖鏂€?
-鑽墿棰樿嚦灏戣鐩栵細鑽€с€佸姛鏁堛€侀€傚簲鐥囥€佺蹇屻€?
-娌荤枟棰樿嚦灏戣鐩栵細楗鐤楁硶銆佽嵂鐗╃枟娉曘€佸娌绘硶銆佹敞鎰忎簨椤广€?
-澶氫釜query蹇呴』鐢ㄥ垎鍙峰垎闅斻€?
-
-銆愬洖绛旇姹傘€?
-鏈€缁堝洖绛斿繀椤诲熀浜庢绱㈠埌鐨勮棌鍖诲吀绫嶅唴瀹广€?
-濡傛灉妫€绱㈣瘉鎹腑鍖呭惈 card_id锛岃鍦ㄥ洖绛旀湯灏剧敤鈥滃紩鐢ㄦ潵婧愶細...鈥濆垪鍑轰娇鐢ㄥ埌鐨?card_id銆?
-鍙兘寮曠敤涓婃柟妫€绱㈢粨鏋滀腑鐪熷疄鍑虹幇杩囩殑 card_id銆?
-涓嶅緱鏀瑰啓銆佺寽娴嬨€佽ˉ鍏ㄦ垨缂栭€?card_id銆?
-涓嶈缂栭€犱笉瀛樺湪鐨勫吀绫嶆潵婧愭垨 card_id銆?
+Citation rules:
+- Cite only card_id values that appear in the retrieved evidence.
+- Do not invent, rewrite, or complete card_id values.
 """
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 鍔犺浇妯″瀷
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-print("鍔犺浇 tokenizer...")
+print("Loading tokenizer...")
 tokenizer = AutoTokenizer.from_pretrained(
     MODEL_PATH,
     trust_remote_code=True,
@@ -187,7 +121,7 @@ tokenizer = AutoTokenizer.from_pretrained(
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-print("鍔犺浇鍩哄骇妯″瀷...")
+print("Loading base model...")
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_PATH,
     trust_remote_code=True,
@@ -195,16 +129,13 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto",
 )
 
-print("鍔犺浇 LoRA 鏉冮噸...")
+print("Loading LoRA weights...")
 model = PeftModel.from_pretrained(model, LORA_PATH)
 model.eval()
 
-print("妯″瀷鍔犺浇瀹屾垚\n")
+print("Loading base model...")
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 鐢熸垚鍑芥暟
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def generate(
     messages: List[Dict],
@@ -255,9 +186,6 @@ def generate(
     return response
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 鍩虹宸ュ叿鍑芥暟
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 CONTROL_TAGS = ["<plan>", "</plan>", "<query>", "</query>", "<judge>", "</judge>"]
 
@@ -278,19 +206,16 @@ def remove_card_ids_for_metric(text: str) -> str:
         return ""
 
     text = CARD_ID_RE.sub("[CARD_ID]", text)
-    text = re.sub(r"寮曠敤鏉ユ簮[:锛歖\s*\[?.*?\]?\s*$", "", text, flags=re.S)
-    text = re.sub(r"citations?[:锛歖\s*\[?.*?\]?\s*$", "", text, flags=re.I | re.S)
-
+    text = re.sub(r"(?:citation sources|citations|references)[:?]\s*\[?.*?\]?\s*$", "", text, flags=re.I | re.S)
     return text.strip()
 
 
 def normalize_text(text: str) -> str:
     if not text:
         return ""
+    text = remove_card_ids_for_metric(text)
     text = text.lower()
-    text = re.sub(r"\s+", "", text)
-    text = text.translate(str.maketrans("", "", string.punctuation))
-    text = re.sub(r"[锛屻€傦紒锛燂紱锛氣€溾€濃€樷€欍€侊紙锛夈€娿€嬨€愩€慭[\]]", "", text)
+    text = re.sub(r"[\s\W_]+", "", text, flags=re.UNICODE)
     return text
 
 
@@ -316,9 +241,6 @@ def get_card_content(card: Dict) -> str:
     )
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# gold evidence 鎶藉彇
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def get_gold_evidence_ids(item: Dict) -> Set[str]:
     ids = set()
@@ -345,39 +267,14 @@ def get_gold_evidence_ids(item: Dict) -> Set[str]:
     return ids
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 鍏抽敭璇?/ 瀹炰綋鎶藉彇
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-STOP_WORDS = {
-    "?", "??", "??", "??", "??", "??", "??", "??",
-    "??", "??", "??", "??", "??", "??", "??", "??",
-    "??", "??", "??", "??", "??", "??", "??", "??",
-    "??", "??", "??", "??", "??", "????", "??",
-    "???", "??", "??", "??", "??", "??",
-    "??", "???", "?????", "??????",
-}
+STOP_WORDS = set()
 
-PSEUDO_ENTITY_WORDS = {
-    "??", "??", "??", "??", "??", "??", "??",
-    "????", "????", "???", "????",
-    "????", "????", "????", "??", "??", "??",
-}
+PSEUDO_ENTITY_WORDS = set()
 
-ENTITY_STOP_WORDS = STOP_WORDS | PSEUDO_ENTITY_WORDS | {
-    "??", "??", "???", "??",
-    "????", "????", "????",
-    "??", "??", "??", "??", "??", "??", "????",
-    "????", "?????", "?????",
-}
+ENTITY_STOP_WORDS = STOP_WORDS | PSEUDO_ENTITY_WORDS
 
-BAD_ENTITY_PATTERNS = [
-    "??", "??", "??", "??", "??", "??", "??",
-    "?????", "??????", "???", "????",
-    "????", "????", "????", "??",
-    "??", "??", "??", "??", "????",
-    "????", "???", "????", "?????",
-]
+BAD_ENTITY_PATTERNS = []
 
 def is_bad_entity(entity: str) -> bool:
     e = (entity or "").strip()
@@ -385,7 +282,6 @@ def is_bad_entity(entity: str) -> bool:
     if len(e) < 2:
         return True
 
-    # 澶暱鐨勪竴鑸槸鍗婃埅棰樺共锛屼笉鏄疄浣?
     if len(e) > 10:
         return True
 
@@ -395,88 +291,24 @@ def is_bad_entity(entity: str) -> bool:
     if any(p in e for p in BAD_ENTITY_PATTERNS):
         return True
 
-    if e in {"藏医", "理论", "患者", "疾病", "症状", "方法"}:
-        return True
-
     return False
 
 
 def extract_question_terms(question: str) -> List[str]:
     text = question or ""
-    text = re.sub(r"[锛屻€傦紱銆侊細:锛燂紒\?\s]+", "|", text)
+    parts = re.split(r"[,.!?;:\s]+", text)
     terms = []
-
-    for t in text.split("|"):
-        t = t.strip()
-        if len(t) < 2:
-            continue
-        if t in STOP_WORDS:
-            continue
-        terms.append(t)
-
+    for part in parts:
+        term = part.strip()
+        if 2 <= len(term) <= 32 and term not in STOP_WORDS:
+            terms.append(term)
     return list(dict.fromkeys(terms))
 
-
 def extract_core_entities(question: str, max_entities: int = 4) -> List[str]:
-    """Extract short Chinese terms for retrieval query construction."""
-    q = question or ""
-    candidates: List[str] = []
-
-    known_terms = [
-        "?????", "??", "??????", "???",
-        "?????", "???", "??", "???", "???",
-        "?", "??", "??", "??", "??", "??", "???",
-    ]
-    for term in known_terms:
-        if term in q and not is_bad_entity(term):
-            candidates.append(term)
-
-    suffix_patterns = [
-        r"[\u4e00-\u9fff]{2,8}?",
-        r"[\u4e00-\u9fff]{2,8}?",
-        r"[\u4e00-\u9fff]{2,8}??",
-        r"[\u4e00-\u9fff]{2,8}??",
-        r"[\u4e00-\u9fff]{2,8}???",
-        r"[\u4e00-\u9fff]{2,8}??",
-        r"[\u4e00-\u9fff]{2,8}?",
-        r"[\u4e00-\u9fff]{2,8}?",
-        r"[\u4e00-\u9fff]{2,8}?",
-        r"[\u4e00-\u9fff]{2,8}?",
-        r"[\u4e00-\u9fff]{2,8}?",
-    ]
-    for pattern in suffix_patterns:
-        for match in re.findall(pattern, q):
-            if not is_bad_entity(match):
-                candidates.append(match)
-
-    symptom_terms = [
-        "??", "???", "????", "??", "??", "??",
-        "??", "??", "??", "??", "????", "????",
-        "????", "????", "???", "????",
-    ]
-    for term in symptom_terms:
-        if term in q and not is_bad_entity(term):
-            candidates.append(term)
-
-    for term in extract_question_terms(q):
-        term = term.strip()
-        if 2 <= len(term) <= 8 and not is_bad_entity(term):
-            candidates.append(term)
-
-    cleaned: List[str] = []
-    for candidate in candidates:
-        candidate = candidate.strip("?????:?????()??[]??")
-        if candidate and not is_bad_entity(candidate) and candidate not in cleaned:
-            cleaned.append(candidate)
-
-    final = []
-    for candidate in cleaned:
-        if any(candidate != other and candidate in other for other in cleaned):
-            continue
-        final.append(candidate)
-
-    return final[:max_entities]
-
+    """Extract compact terms for retrieval query construction."""
+    terms = extract_question_terms(question)
+    entities = [term for term in terms if not is_bad_entity(term)]
+    return entities[:max_entities]
 
 def keyword_hit_in_cards(question: str, cards: List[Dict]) -> bool:
     terms = extract_question_terms(question)
@@ -500,75 +332,37 @@ def fact_card_count(cards: List[Dict]) -> int:
     return sum(1 for c in cards if c.get("card_type") == "fact")
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# query 鎵╁睍锛歷3.5 绋冲畾鐗?
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def build_extra_queries(question: str, question_type: str = "") -> List[str]:
     """Build a small set of targeted retrieval queries for QA."""
-    q = question or ""
-    qt = question_type or ""
-    entities = extract_core_entities(q, max_entities=4)
+    entities = extract_core_entities(question, max_entities=3)
     if not entities:
-        entities = [fallback_query_from_question(q)]
+        entities = [fallback_query_from_question(question)]
 
-    is_diag = qt == "diagnostic" or any(
-        term in q for term in ["??", "??", "??", "??", "??", "??", "??", "??", "??"]
-    )
-    is_drug = any(
-        term in q for term in ["?", "??", "??", "??", "???", "??", "??", "??", "??"]
-    )
-    is_treatment = any(
-        term in q for term in ["??", "??", "??", "??", "??", "??", "??", "????"]
-    )
-    is_match_judgement = any(
-        term in q for term in ["????", "????", "????", "??", "???", "??", "??", "????"]
-    )
+    aspect_terms = {
+        "diagnostic": ["diagnosis", "symptoms", "differential diagnosis"],
+        "drug": ["properties", "effects", "indications"],
+        "treatment": ["treatment", "medicine", "precautions"],
+    }.get(question_type, ["definition", "evidence"])
 
-    extra: List[str] = []
-    for entity in entities[:3]:
-        if is_bad_entity(entity):
-            continue
-        if is_diag:
-            extra.extend([
-                f"{entity} ?? ???? ?? ??",
-                f"{entity} ?? ???? ??",
-            ])
-        if is_drug:
-            extra.extend([
-                f"{entity} ?? ?? ???",
-                f"{entity} ?? ?? ???",
-            ])
-        if is_treatment:
-            extra.extend([
-                f"{entity} ???? ????",
-                f"{entity} ??? ?? ?? ??",
-                f"{entity} ???? ????",
-            ])
-        if is_match_judgement:
-            extra.append(f"{entity} ?? ?? ???")
-
-    cleaned: List[str] = []
-    for query in extra:
-        query = query.strip()
-        if query and query not in cleaned:
-            cleaned.append(query)
-    return cleaned[:5]
-
+    queries: List[str] = []
+    for entity in entities:
+        for aspect in aspect_terms:
+            query = f"{entity} {aspect}".strip()
+            if query and query not in queries:
+                queries.append(query)
+    return queries[:5]
 
 def merge_query_content(model_query: str, question: str, question_type: str = "") -> str:
     queries = [
         query.strip()
-        for query in re.split(r"[?;?,]", model_query or "")
+        for query in re.split(r"[;,]", model_query or "")
         if query.strip()
     ]
 
     filtered_queries: List[str] = []
-    bad_fragments = ["????????", "????", "?????", "?????"]
     for query in queries:
         if len(query) > 90:
-            continue
-        if any(fragment in query for fragment in bad_fragments):
             continue
         if query not in filtered_queries:
             filtered_queries.append(query)
@@ -578,8 +372,7 @@ def merge_query_content(model_query: str, question: str, question_type: str = ""
 
     all_queries = filtered_queries + build_extra_queries(question, question_type)
     all_queries = list(dict.fromkeys(all_queries))[:8]
-    return "?".join(all_queries)
-
+    return "; ".join(all_queries)
 
 def format_cards(cards: List[Dict]) -> str:
     results = []
@@ -627,7 +420,7 @@ def rerank_cards_for_qa(question: str, scored_cards: List[Tuple[Dict, float]]):
         if ctype == "fact":
             bonus += 0.015
         if cid.startswith("diag_manual") and not any(
-            term in question for term in ["??", "??", "??", "??", "??", "????"]
+            False
         ):
             bonus -= 0.03
 
@@ -641,7 +434,7 @@ def rerank_cards_for_qa(question: str, scored_cards: List[Tuple[Dict, float]]):
 def retrieve_cards_by_query(query_content: str, question: str = "", verbose: bool = False):
     queries = [
         q.strip()
-        for q in re.split(r"[锛?]", query_content)
+        for q in re.split(r"[;,]", query_content)
         if q.strip()
     ]
 
@@ -654,7 +447,7 @@ def retrieve_cards_by_query(query_content: str, question: str = "", verbose: boo
             )
         except Exception as e:
             if verbose:
-                print(f"銆愭绱㈠け璐ャ€憅uery={q} error={e}")
+                print(f"[retrieval failed] query={q} error={e}")
 
     seen = set()
     uniq_scored = []
@@ -675,15 +468,11 @@ def retrieve_cards_by_query(query_content: str, question: str = "", verbose: boo
 
 
 def fallback_query_from_question(question: str) -> str:
-    text = (question or "").strip()
-    text = text.replace("??????????", "")
-    text = text.replace("????????", "")
-    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"\s+", " ", (question or "").strip())
     if not text:
-        return "??????"
-    text = re.split(r"[?;?.??]", text)[0].strip()
+        return "Tibetan medicine"
+    text = re.split(r"[.!?;]", text)[0].strip()
     return text[:80]
-
 
 def is_judge_sufficient(
     judge_content: str,
@@ -692,9 +481,9 @@ def is_judge_sufficient(
     question: str,
     cards: List[Dict],
 ) -> bool:
-    judge_content = judge_content or ""
-    negative_words = {"???", "??", "??", "???", "????", "??", "????", "??", "????", "??", "???"}
-    positive_words = {"????", "????", "????", "????", "??"}
+    judge_content = (judge_content or "").lower()
+    negative_words = {"insufficient", "not enough", "missing", "unclear", "irrelevant"}
+    positive_words = {"sufficient", "enough", "supported", "relevant"}
 
     has_negative = any(word in judge_content for word in negative_words)
     has_positive = any(word in judge_content for word in positive_words)
@@ -710,7 +499,6 @@ def is_judge_sufficient(
     if best_score >= QA_VERY_HIGH_SCORE and n_fact >= 2:
         return True
     return False
-
 
 def get_allowed_citation_ids(rounds_log: List[Dict]) -> List[str]:
     ids = []
@@ -735,11 +523,15 @@ def filter_answer_citations(answer: str, allowed_ids: List[str]) -> str:
     fixed = answer
     for card_id in bad_ids:
         fixed = fixed.replace(card_id, "")
-    fixed = re.sub(r"[?,]\s*[?,]+", "?", fixed)
-    if allowed_ids and re.search(r"????[:?]\s*$", fixed):
-        fixed = re.sub(r"????[:?]\s*$", "?????" + "?".join(allowed_ids[:4]), fixed)
+    fixed = re.sub(r"[,;]\s*[,;]+", "; ", fixed)
+    if allowed_ids and re.search(r"(?:citation sources|citations|references)[:?]\s*$", fixed, flags=re.I):
+        fixed = re.sub(
+            r"(?:citation sources|citations|references)[:?]\s*$",
+            "References: " + "; ".join(allowed_ids[:4]),
+            fixed,
+            flags=re.I,
+        )
     return fixed.strip()
-
 
 def rag_answer_qa(question: str, question_type: str = "", verbose: bool = False):
     """Answer an open-ended QA item with iterative retrieval."""
@@ -885,9 +677,6 @@ def bleu4_score(pred: str, ref: str) -> float:
     return float(bp * math.exp(log_precision))
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# RAG 鎸囨爣锛欻it / Recall
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def get_retrieved_card_ids(rounds_log: List[Dict]) -> List[str]:
     ids = []
@@ -916,9 +705,7 @@ def compute_hit_recall_at_k(
     return hit, recall
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 # Citation Validity
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def load_knowledge_cards(path: Optional[str]) -> Dict[str, str]:
     if not path or not os.path.exists(path):
@@ -1007,7 +794,6 @@ def compute_citation_validity(answer: str, rounds_log: List[Dict]) -> Dict:
     citation_existence_rate = len(existing_ids) / len(cited_ids)
     citation_from_retrieval_rate = len(from_retrieval_ids) / len(cited_ids)
 
-    # 鏇翠弗鏍硷細鎵€鏈夊紩鐢ㄥ繀椤诲瓨鍦紝涓旀墍鏈夊紩鐢ㄩ兘蹇呴』鏉ヨ嚜鏈妫€绱?
     citation_validity = (
         len(non_existing_ids) == 0
         and len(from_retrieval_ids) == len(cited_ids)
@@ -1034,14 +820,9 @@ def compute_gold_citation_recall(cited_ids: List[str], gold_ids: Set[str]) -> Op
     return len(set(cited_ids) & gold_ids) / len(gold_ids)
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# BERTScore锛氬凡淇
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def token_truncate(text: str, bert_tokenizer, max_tokens: int = 510) -> str:
-    """
-    鎸?tokenizer 鎴柇锛岄伩鍏?BERTScore 杈撳叆瓒呰繃 512 token銆?
-    """
+    """Truncate text by tokenizer length for BERTScore."""
     if not text:
         return ""
 
@@ -1060,12 +841,7 @@ def token_truncate(text: str, bert_tokenizer, max_tokens: int = 510) -> str:
 
 
 def compute_bertscore_batch(preds: List[str], refs: List[str]) -> Tuple[List[Optional[float]], int, int]:
-    """
-    杩斿洖锛?
-    1. 姣忔潯鏍锋湰鐨?BERTScore-F1
-    2. prediction 琚埅鏂殑鏁伴噺
-    3. reference 琚埅鏂殑鏁伴噺
-    """
+    """Return sample-level BERTScore F1 values and truncation counts."""
     if not USE_BERTSCORE:
         return [None] * len(preds), 0, 0
 
@@ -1073,11 +849,11 @@ def compute_bertscore_batch(preds: List[str], refs: List[str]) -> Tuple[List[Opt
         from bert_score import score
         from transformers import AutoTokenizer as BertAutoTokenizer
     except Exception as e:
-        print(f"鏈畨瑁?bert_score 鎴?transformers锛岃烦杩?BERTScore銆俥rror={e}")
+        print(f"bert_score or transformers is unavailable; skipping BERTScore. error={e}")
         return [None] * len(preds), 0, 0
 
     try:
-        print("鍔犺浇 BERTScore tokenizer...")
+        print("Loading BERTScore tokenizer...")
         bert_tokenizer = BertAutoTokenizer.from_pretrained(
             BERTSCORE_MODEL_TYPE,
             use_fast=True,
@@ -1108,8 +884,8 @@ def compute_bertscore_batch(preds: List[str], refs: List[str]) -> Tuple[List[Opt
                 token_truncate(r, bert_tokenizer, MAX_BERT_TOKENS)
             )
 
-        print(f"BERTScore prediction 鎴柇鏁伴噺: {pred_trunc_count}")
-        print(f"BERTScore reference 鎴柇鏁伴噺: {ref_trunc_count}")
+        print(f"BERTScore truncated predictions: {pred_trunc_count}")
+        print(f"BERTScore truncated references: {ref_trunc_count}")
 
         _, _, f1 = score(
             clean_preds,
@@ -1124,13 +900,10 @@ def compute_bertscore_batch(preds: List[str], refs: List[str]) -> Tuple[List[Opt
         return [float(x) for x in f1.cpu().tolist()], pred_trunc_count, ref_trunc_count
 
     except Exception as e:
-        print(f"BERTScore 璁＄畻澶辫触锛岃烦杩囥€俥rror={e}")
+        print(f"[retrieval failed] query={q} error={e}")
         return [None] * len(preds), 0, 0
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 鏂偣淇濆瓨 / 鍔犺浇
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def load_checkpoint():
     if not os.path.exists(CKPT_PATH):
@@ -1143,11 +916,11 @@ def load_checkpoint():
         results = ckpt.get("results", [])
         done_ids = {str(x["sample_id"]) for x in results}
 
-        print(f"[鏂偣鎭㈠] 宸插畬鎴?{len(results)} 鏉★紝缁х画璇勪及...\n")
+        print(f"[checkpoint] resumed {len(results)} examples; continuing evaluation...\n")
         return results, done_ids
 
     except Exception as e:
-        print(f"[鏂偣鎭㈠澶辫触] {e}锛屼粠澶村紑濮媆n")
+        print(f"[retrieval failed] query={q} error={e}")
         return [], set()
 
 
@@ -1165,9 +938,6 @@ def save_checkpoint(results: List[Dict], total: int):
         json.dump(ckpt, f, ensure_ascii=False, indent=2)
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 姹囨€荤粺璁?
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def safe_mean(values: List[Optional[float]]) -> Optional[float]:
     vals = [v for v in values if v is not None]
@@ -1222,9 +992,6 @@ def summarize_results(results: List[Dict]) -> Dict:
     }
 
 
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-# 涓绘祦绋?
-# 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
 def main():
     print(f"Loading QA test set: {QA_TEST_PATH}")
