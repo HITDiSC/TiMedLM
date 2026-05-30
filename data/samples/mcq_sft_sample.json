@@ -1,0 +1,19 @@
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful domain QA assistant."
+      },
+      {
+        "role": "user",
+        "content": "Choose the correct option for this synthetic multiple-choice item. A. alpha B. beta C. gamma D. delta"
+      },
+      {
+        "role": "assistant",
+        "content": "A"
+      }
+    ],
+    "source": "synthetic_sample"
+  }
+]

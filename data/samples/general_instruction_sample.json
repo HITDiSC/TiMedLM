@@ -1,0 +1,7 @@
+[
+  {
+    "instruction": "Summarize the following synthetic paragraph.",
+    "input": "A short synthetic paragraph about a medical knowledge base.",
+    "output": "The paragraph describes a synthetic medical knowledge base."
+  }
+]

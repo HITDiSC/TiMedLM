@@ -1,0 +1,24 @@
+[
+  {
+    "question_id": "sample-qa-001",
+    "question_type": "diagnostic",
+    "question": "Synthetic open-ended QA question.",
+    "reference_answer": "Synthetic reference answer with citation fact_demo_001_001.",
+    "gold_fact_ids": [
+      "fact_demo_001_001"
+    ],
+    "source_queries": [
+      "synthetic evidence query"
+    ],
+    "source_tool_cards": [
+      {
+        "card_id": "fact_demo_001_001",
+        "query": "synthetic evidence query",
+        "refined_result": "Synthetic evidence.",
+        "citation_text": "Synthetic citation text."
+      }
+    ],
+    "rounds_min": 1,
+    "source": "synthetic_sample"
+  }
+]

@@ -1,0 +1,19 @@
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "You answer domain questions using concise reasoning."
+      },
+      {
+        "role": "user",
+        "content": "Explain how a synthetic symptom pattern should be analyzed."
+      },
+      {
+        "role": "assistant",
+        "content": "First identify the key signs, then match them to the relevant concept and cite supporting evidence when available."
+      }
+    ],
+    "source": "synthetic_sample"
+  }
+]

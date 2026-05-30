@@ -1,0 +1,14 @@
+[
+  {
+    "question_num": "sample-mcq-001",
+    "chapter": "synthetic",
+    "query": "Which option best matches the synthetic medical concept described in the question?",
+    "options": {
+      "A": "Concept alpha",
+      "B": "Concept beta",
+      "C": "Concept gamma",
+      "D": "Concept delta"
+    },
+    "answer": "A"
+  }
+]

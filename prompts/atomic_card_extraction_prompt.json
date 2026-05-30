@@ -1,0 +1,32 @@
+{
+  "task": [
+    "Extract structured atomic knowledge cards from a source page."
+  ],
+  "requirements": [
+    "Only extract information explicitly supported by the provided context.",
+    "Return JSON Lines only, one complete JSON object per line.",
+    "Use card_type='fact' for factual attributes and card_type='case' for condition-to-conclusion reasoning cases.",
+    "Return [] if the context does not contain extractable domain knowledge."
+  ],
+  "schema": {
+    "card_id": "<card_type>_<book_abbr>_<page>_<seq>",
+    "card_type": "fact | case",
+    "entity": "canonical entity name",
+    "title": "short card title",
+    "content": "natural-language card content supported by the context",
+    "structured_fields": {},
+    "retrieval_enhancement": {
+      "keywords": [
+        "keyword"
+      ]
+    },
+    "evidence": {
+      "source_title": "book title",
+      "page": 1,
+      "citation_text": "short source excerpt"
+    }
+  },
+  "context_text": [
+    "Book: {book_name}; page: {page_no}\n\n{context}"
+  ]
+}

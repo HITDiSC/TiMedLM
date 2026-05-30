@@ -1,0 +1,32 @@
+[
+  {
+    "book": "synthetic",
+    "type": "A1",
+    "gold": "A",
+    "rounds": 1,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You solve MCQ items with retrieval when needed."
+      },
+      {
+        "role": "user",
+        "content": "Synthetic MCQ. A. alpha B. beta C. gamma D. delta"
+      },
+      {
+        "role": "assistant",
+        "content": "<query>synthetic alpha concept</query>"
+      },
+      {
+        "role": "tool",
+        "content": "[{\"card_id\": \"fact_demo_001_001\", \"content\": \"Synthetic alpha evidence.\"}]"
+      },
+      {
+        "role": "assistant",
+        "content": "A"
+      }
+    ],
+    "format_id": "plain_letter",
+    "source": "synthetic_sample"
+  }
+]

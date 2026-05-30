@@ -1,0 +1,16 @@
+accelerate
+bert-score
+datasets
+FlagEmbedding
+jieba
+numpy
+openai
+peft
+rank-bm25
+rouge-chinese
+scikit-learn
+sentencepiece
+torch
+tqdm
+transformers
+trl

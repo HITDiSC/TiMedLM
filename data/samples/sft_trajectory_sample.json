@@ -1,0 +1,31 @@
+[
+  {
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a retrieval-augmented QA assistant."
+      },
+      {
+        "role": "user",
+        "content": "Synthetic question requiring retrieval."
+      },
+      {
+        "role": "assistant",
+        "content": "<plan>Search for the relevant concept.</plan>"
+      },
+      {
+        "role": "assistant",
+        "content": "<query>synthetic concept evidence</query>"
+      },
+      {
+        "role": "tool",
+        "content": "[{\"card_id\": \"fact_demo_001_001\", \"content\": \"Synthetic evidence card.\"}]"
+      },
+      {
+        "role": "assistant",
+        "content": "The answer is supported by fact_demo_001_001."
+      }
+    ],
+    "source": "synthetic_sample"
+  }
+]

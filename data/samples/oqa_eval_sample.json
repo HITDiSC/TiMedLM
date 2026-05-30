@@ -1,0 +1,14 @@
+[
+  {
+    "id": "sample-qa-eval-001",
+    "question": "Synthetic open-ended evaluation question.",
+    "reference": "Synthetic reference answer.",
+    "question_type": "general",
+    "seed_card_ids": [
+      "fact_demo_001_001"
+    ],
+    "citations": [
+      "fact_demo_001_001"
+    ]
+  }
+]
