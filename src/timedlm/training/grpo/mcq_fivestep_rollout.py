@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-# This file runs five-step MCQ retrieval rollouts for GRPO.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 """
 Old-eval-compatible MCQ rollout sanity for GRPO.
 

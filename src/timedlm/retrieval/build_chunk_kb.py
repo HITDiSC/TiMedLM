@@ -1,8 +1,3 @@
-# This file builds a chunk-level knowledge base from source books.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 # -*- coding: utf-8 -*-
 """
 Build a chunk-based knowledge base from raw OCR book txt files.

@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-# This file evaluates the base Qwen model on open-ended QA without RAG.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 """
 问答 baseline 1：
 Qwen3-8B no-think，无 RAG，无 LoRA

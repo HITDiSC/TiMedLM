@@ -1,8 +1,3 @@
-# This file builds embedding and BM25 indexes for atomic knowledge cards.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 # -*- coding: utf-8 -*-
 """Build dense and sparse retrieval indexes for TiMedLM atomic cards.
 

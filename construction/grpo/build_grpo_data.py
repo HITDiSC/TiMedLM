@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-# This file builds GRPO training data from retrieval and answer trajectories.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 """Build TiMedLM GRPO training files from local source pools.
 
 The repository keeps only small samples. Use this script with your private

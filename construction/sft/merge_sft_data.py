@@ -1,8 +1,3 @@
-# This file merges SFT data sources into a single training file.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 """
 数据合并脚本
 将 mcq_train.json / qa_train.json / belle_train.json 合并为最终训练集

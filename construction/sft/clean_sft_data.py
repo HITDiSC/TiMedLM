@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-# This file cleans SFT trajectory data before training.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 """
 清洗merged_train.json：
 1. 只保留messages字段

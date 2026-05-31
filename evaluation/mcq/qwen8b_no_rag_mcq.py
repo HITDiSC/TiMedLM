@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-# This file evaluates the base Qwen model on MCQ without RAG.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 """
 基线模型评估脚本（nothink模式）
 Qwen3-8B原始模型，无RAG，无LoRA

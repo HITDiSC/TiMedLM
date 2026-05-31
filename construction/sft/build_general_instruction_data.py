@@ -1,8 +1,3 @@
-# This file builds general instruction examples for SFT.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 """
 BELLE通用数据处理脚本（6000条加权修复版）
 - 默认从BELLE数据集中筛选500条通用题

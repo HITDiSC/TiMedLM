@@ -1,8 +1,3 @@
-# This file builds open-ended QA SFT examples.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 """
 问答对轨迹处理脚本（6000条加权修复版）
 - 原始问答约1000条时，默认随机抽取200条作为测试集

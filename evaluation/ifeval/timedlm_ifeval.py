@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-# This file evaluates TiMedLM on IFEval.
-# Author: TiMedLM contributors
-# Date: 2026-05-30
-# Copyright (c) 2026 TiMedLM contributors. All rights reserved.
-# See LICENSE file in the project root for license information.
 """
 IFEval 测评脚本 3：
 Ours = Qwen3-8B + LoRA，默认 no-think，无 RAG
