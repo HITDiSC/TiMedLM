@@ -77,10 +77,10 @@ Build card embeddings and BM25 cache:
 
 ```bash
 python src/timedlm/retrieval/build_embeddings.py \
-  --cards_dir data/atomic_cards \
+  --kb_dir data/atomic_cards \
   --embedding_model BAAI/bge-m3 \
-  --embedding_cache cache/atoms_all_bge.pkl \
-  --bm25_cache cache/atoms_bm25.pkl
+  --embed_out cache/atoms_all_bge.pkl \
+  --bm25_out cache/atoms_bm25.pkl
 ```
 
 ### Training Data

@@ -15,7 +15,9 @@ import math
 import os
 import random
 import re
+import sys
 from collections import Counter
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 import torch
@@ -23,6 +25,8 @@ from peft import LoraConfig, PeftModel, get_peft_model
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer, get_cosine_schedule_with_warmup
 
+RETRIEVAL_ROOT = Path(__file__).resolve().parents[2] / "retrieval"
+sys.path.insert(0, str(RETRIEVAL_ROOT))
 from retrieval import retrieve_with_scores
 
 

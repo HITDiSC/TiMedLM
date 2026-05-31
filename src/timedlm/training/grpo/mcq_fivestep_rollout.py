@@ -14,7 +14,9 @@ import json
 import os
 import random
 import re
+import sys
 from collections import Counter
+from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import torch
@@ -22,6 +24,8 @@ from peft import PeftModel
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+RETRIEVAL_ROOT = Path(__file__).resolve().parents[2] / "retrieval"
+sys.path.insert(0, str(RETRIEVAL_ROOT))
 from retrieval import retrieve_with_scores
 
 
