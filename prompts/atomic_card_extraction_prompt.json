@@ -1,12 +1,26 @@
 {
   "task": [
-    "Extract structured atomic knowledge cards from a source page."
+    "Extract structured atomic knowledge cards from a source page for a retrieval-augmented Tibetan medicine QA system.",
+    "Each card should describe one self-contained knowledge unit that can be retrieved independently."
   ],
   "requirements": [
     "Only extract information explicitly supported by the provided context.",
+    "Do not add external knowledge, modern clinical advice, or unsupported interpretation.",
+    "Split dense paragraphs into multiple atomic cards when they contain separate entities, symptoms, medicines, treatments, diagnostics, contraindications, or theory points.",
+    "Merge repeated statements on the same page only when they express the same fact.",
     "Return JSON Lines only, one complete JSON object per line.",
     "Use card_type='fact' for factual attributes and card_type='case' for condition-to-conclusion reasoning cases.",
-    "Return [] if the context does not contain extractable domain knowledge."
+    "Use card_type='fact' for definitions, properties, functions, indications, contraindications, diagnostic signs, treatment methods, and theoretical claims.",
+    "Use card_type='case' when the context describes a symptom/sign pattern that supports a diagnosis, syndrome, treatment choice, or conclusion.",
+    "The content field must be concise, complete, and understandable without reading the original page.",
+    "The title field should be short and retrieval-friendly.",
+    "The entity field should contain the main disease, medicine, formula, symptom, diagnostic method, treatment, or theory concept.",
+    "The structured_fields object may include keys such as category, properties, functions, indications, contraindications, symptoms, diagnosis, treatment, pulse_sign, urine_sign, dosage, preparation, source_relation, or reasoning_basis when supported.",
+    "The retrieval_enhancement.keywords list should include synonyms, related terms, and short retrieval phrases that appear in or are directly implied by the context.",
+    "The evidence.citation_text field should copy a short source-supported excerpt from the page.",
+    "Keep card_id stable and unique using the provided book abbreviation, page number, and a three-digit sequence number.",
+    "Return [] if the context does not contain extractable domain knowledge.",
+    "Return no Markdown, no comments, and no explanatory text outside JSON Lines."
   ],
   "schema": {
     "card_id": "<card_type>_<book_abbr>_<page>_<seq>",
@@ -26,7 +40,37 @@
       "citation_text": "short source excerpt"
     }
   },
+  "quality_checks": [
+    "A card is valid only if its content can be verified from evidence.citation_text and the page context.",
+    "Avoid vague cards such as 'this passage discusses treatment'.",
+    "Avoid cards that combine unrelated knowledge points.",
+    "Avoid hallucinated book titles, page numbers, card IDs, or citations."
+  ],
+  "output_example": {
+    "card_id": "fact_sbyd_012_001",
+    "card_type": "fact",
+    "entity": "example entity",
+    "title": "example entity diagnostic sign",
+    "content": "A concise source-supported statement extracted from the page.",
+    "structured_fields": {
+      "category": "diagnosis",
+      "symptoms": [
+        "example symptom"
+      ]
+    },
+    "retrieval_enhancement": {
+      "keywords": [
+        "example entity",
+        "diagnostic sign"
+      ]
+    },
+    "evidence": {
+      "source_title": "source book title",
+      "page": 12,
+      "citation_text": "short excerpt from the page"
+    }
+  },
   "context_text": [
-    "Book: {book_name}; page: {page_no}\n\n{context}"
+    "Book: {book_name}\nBook abbreviation: {book_abbr}\nPage: {page_no}\n\nSource context:\n{context}"
   ]
 }

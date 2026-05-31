@@ -27,11 +27,11 @@ DEFAULT_SLEEP_SECONDS = 0.5
 DEFAULT_REQUEST_TIMEOUT = 120.0
 
 DEFAULT_BOOKS = [
-    {"name": "Blue Beryl", "abbr": "lll", "filename": "[OCR]_蓝琉璃.txt"},
-    {"name": "The Four Medical Tantras", "abbr": "sbyd", "filename": "[OCR]_四部医典.txt"},
-    {"name": "Somaratsa", "abbr": "ywyz", "filename": "[OCR]_月王药诊.txt"},
-    {"name": "Jing Zhu Ben Cao", "abbr": "jzbc", "filename": "[OCR]_晶珠本草.txt"},
-    {"name": "Introduction to Tibetan Medicine", "abbr": "zyyx", "filename": "[OCR]_藏医药学.txt"},
+    {"name": "Blue Beryl", "abbr": "lll", "filename": "blue_beryl.txt"},
+    {"name": "The Four Medical Tantras", "abbr": "sbyd", "filename": "four_medical_tantras.txt"},
+    {"name": "Somaratsa", "abbr": "ywyz", "filename": "somaratsa.txt"},
+    {"name": "Jing Zhu Ben Cao", "abbr": "jzbc", "filename": "jing_zhu_ben_cao.txt"},
+    {"name": "Introduction to Tibetan Medicine", "abbr": "zyyx", "filename": "introduction_to_tibetan_medicine.txt"},
 ]
 
 
@@ -132,21 +132,23 @@ def load_prompt(prompt_path: Path) -> Dict:
         return json.load(f)
 
 
-def build_prompts(prompt_json: Dict, book_name: str, page_no: int, text: str, max_context_len: int):
+def build_prompts(prompt_json: Dict, book_name: str, book_abbr: str, page_no: int, text: str, max_context_len: int):
     system_prompt = "\n".join(prompt_json["task"]) + "\n" + "\n".join(prompt_json["requirements"])
     context_template = "\n".join(prompt_json["context_text"])
     user_prompt = context_template.format(
         book_name=book_name,
+        book_abbr=book_abbr,
         page_no=page_no,
         context=text[:max_context_len],
     )
     return system_prompt, user_prompt
 
 
-def extract_page_cards(client: OpenAI, args, prompt_json: Dict, page: Dict, book_name: str) -> List[Dict]:
+def extract_page_cards(client: OpenAI, args, prompt_json: Dict, page: Dict, book: Dict) -> List[Dict]:
     system_prompt, user_prompt = build_prompts(
         prompt_json=prompt_json,
-        book_name=book_name,
+        book_name=book["name"],
+        book_abbr=book["abbr"],
         page_no=page["page"],
         text=page["text"],
         max_context_len=args.max_context_len,
@@ -202,7 +204,7 @@ def extract_from_book(client: OpenAI, args, prompt_json: Dict, book: Dict) -> in
             if page_no in done:
                 continue
             print(f"  Extracting page {page_no}...")
-            cards = extract_page_cards(client, args, prompt_json, page, book["name"])
+            cards = extract_page_cards(client, args, prompt_json, page, book)
             if cards:
                 for card in cards:
                     fw.write(json.dumps(card, ensure_ascii=False) + "\n")
